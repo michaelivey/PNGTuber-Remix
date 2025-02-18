@@ -194,6 +194,7 @@ func _on_file_dialog_file_selected(path):
 					Global.held_sprite.texture_normal_bytes = img.save_png_to_buffer()
 
 			Global.get_sprite_states(Global.current_state)
+			Global.held_sprite.update_texture(!Global.held_sprite.img_animated)
 
 func _on_file_dialog_files_selected(paths):
 	if current_state == State.LoadSprites or current_state == State.AddAppend:

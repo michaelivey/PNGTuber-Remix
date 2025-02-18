@@ -641,7 +641,8 @@ func _on_del_normal_button_pressed():
 	if Global.held_sprite != null:
 		if !Global.held_sprite.is_apng:
 			if not Global.held_sprite.dictmain.folder:
-				Global.held_sprite.get_node("%Sprite2D").texture.normal_texture = null
+				Global.held_sprite.get_node("%Sprite2D").texture.normal_texture = null				
+				Global.held_sprite.texture_normal_bytes = null
 #endregion
 
 #region size stuff
