@@ -40,6 +40,10 @@ func _on_animation_frames_slider_value_changed(value):
 	Global.held_sprite.animation()
 	Global.held_sprite.get_node("%Grab").anchors_preset = Control.LayoutPreset.PRESET_FULL_RECT
 	Global.held_sprite.save_state(Global.current_state)
+	if Global.held_sprite.is_apng:
+		Global.held_sprite.reloadApngTexture()
+	else:
+		Global.held_sprite.reloadTexture()
 
 func _on_animation_speed_slider_value_changed(value):
 	%AnimationSpeedLabel.text = "Animation Speed : " + str(value) + " Fps"

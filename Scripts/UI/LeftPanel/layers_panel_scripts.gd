@@ -55,8 +55,8 @@ func _on_duplicate_button_pressed():
 		
 		if Global.held_sprite.img_animated:
 			obj.img_animated = true
-			obj.anim_texture = Global.held_sprite.anim_texture
-			obj.anim_texture_normal = Global.held_sprite.anim_texture_normal 
+			obj.texture_buffer = Global.held_sprite.texture_buffer
+			obj.texture_buffer_normal = Global.held_sprite.texture_buffer_normal 
 		
 		obj.dictmain = Global.held_sprite.dictmain.duplicate()
 		obj.states = Global.held_sprite.states.duplicate()

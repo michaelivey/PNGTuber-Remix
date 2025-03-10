@@ -83,11 +83,12 @@ var dictmain : Dictionary = {
 	mouse_scale_y = 0.0,
 	mouse_rotation_max = 0.0,
 	mouse_rotation_min = 0.0,
+	trimTransparentPixels = true
 	
 	}
 
-var anim_texture 
-var anim_texture_normal 
+var texture_buffer 
+var texture_buffer_normal 
 var img_animated : bool = false
 var is_apng : bool = false
 var is_collapsed : bool = false
@@ -145,6 +146,7 @@ func _process(_delta):
 	if Global.held_sprite == self:
 		%Grab.mouse_filter = 1
 		%Ghost.texture = %Sprite2D.texture
+		%Ghost.offset = %Sprite2D.offset
 		%Ghost.hframes = %Sprite2D.hframes
 		%Ghost.frame = %Sprite2D.frame
 		%Ghost.flip_h = %Sprite2D.flip_h
@@ -361,3 +363,65 @@ func _physics_process(delta):
 				if frames2.size() != frames.size():
 					frames2.resize(frames.size())
 				%Sprite2D.texture.normal_texture = ImageTexture.create_from_image(cframe2.content)
+
+func reloadApngTexture():
+	var img = AImgIOAPNGImporter.load_from_buffer(texture_buffer)
+	var tex = img[1] as Array[AImgIOFrame]
+	frames = tex
+	
+	for n in frames:
+		n.content.fix_alpha_edges()
+	
+	var cframe: AImgIOFrame = frames[0]
+	
+	var text = ImageTexture.create_from_image(cframe.content)
+	var img_can = CanvasTexture.new()
+	img_can.diffuse_texture = text
+	if texture_buffer_normal:
+		var norm = AImgIOAPNGImporter.load_from_buffer(texture_buffer_normal)
+		var texn = norm[1] as Array[AImgIOFrame]
+		frames2 = texn
+		for n in frames2:
+			n.content.fix_alpha_edges()
+		
+		var cframe2: AImgIOFrame = frames2[0]
+		var text2 = ImageTexture.create_from_image(cframe2.content)
+		img_can.normal_texture = text2
+	is_apng = true
+	get_node("%Sprite2D").texture = img_can
+	
+func reloadTexture():
+	var img = Image.new()
+	img.load_png_from_buffer(texture_buffer)		
+	img.fix_alpha_edges()
+	var img_tex = ImageTexture.new()
+	var img_size = img.get_size()
+	img_tex.set_image(img)
+	is_apng = false
+	var offsets = Rect2i(0,0,img_size.x, img_size.y)
+	var compress_texture_offset = Vector2i(0,0)
+	
+	var trimTransparency = dictmain.trimTransparentPixels && !is_apng && dictmain.hframes == 1
+	
+	if (trimTransparency):
+		offsets = img.get_used_rect()
+		compress_texture_offset = -img_size * 0.5 + 1.0 * offsets.get_center()
+		img_tex = ImageTexture.create_from_image(img.get_region(offsets))
+	
+	get_node("%Sprite2D").offset = compress_texture_offset
+	var img_can = CanvasTexture.new()
+	img_can.diffuse_texture = img_tex
+	get_node("%Sprite2D").texture = img_can
+	
+	if (texture_buffer_normal):
+		img.load_png_from_buffer(texture_buffer_normal)		
+		img.fix_alpha_edges()
+		img_tex = ImageTexture.new()
+		var img_size_normal = img.get_size()
+		img_tex.set_image(img)
+		compress_texture_offset = Vector2i(0,0)
+		
+		if (trimTransparency):
+			offsets = offsets/img_size * img_size_normal
+			img_tex = ImageTexture.create_from_image(img.get_region(offsets))
+		img_can.normal_texture = img_tex

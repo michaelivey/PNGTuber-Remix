@@ -56,20 +56,15 @@ func save_file(path):
 			
 			sprites_array.append(sprt_dict)
 		else:
-			if sprt.img_animated:
-				img = sprt.anim_texture
-			if sprt.img_animated:
-				img = sprt.anim_texture
+			if sprt.texture_buffer:
+				img = sprt.texture_buffer
 			else:
 				img = sprt.get_node("%Sprite2D").texture.diffuse_texture.get_image().save_png_to_buffer()
 				
 			var normal_img
 			if sprt.get_node("%Sprite2D").texture.normal_texture:
-				if sprt.img_animated:
-					normal_img = sprt.anim_texture_normal
-
-				if sprt.img_animated:
-					normal_img = sprt.anim_texture_normal
+				if sprt.texture_buffer:
+					normal_img = sprt.texture_buffer_normal
 				else:
 					normal_img = sprt.get_node("%Sprite2D").texture.normal_texture.get_image().save_png_to_buffer()
 			
@@ -213,62 +208,34 @@ func load_file(path, should_load_path = false):
 
 func load_sprite(sprite_obj, sprite):
 	var img_data
-	var img = Image.new()
 
 	if sprite.img is not PackedByteArray:
 		img_data = Marshalls.base64_to_raw(sprite.img)
-		img.load_png_from_buffer(img_data)
 	else:
-		img.load_png_from_buffer(sprite.img)
-		
-	img.fix_alpha_edges()
-	var img_tex = ImageTexture.new()
-	img_tex.set_image(img)
-	var img_can = CanvasTexture.new()
-	img_can.diffuse_texture = img_tex
+		img_data = sprite.img
+	
+	sprite_obj.texture_buffer = img_data;	
 	
 
 	if sprite.has("normal"):
 		var normalBytes = sprite.normal
 		if normalBytes != null:
 			var nimg = Image.new()
+			var img_normal
 			if sprite.normal is not PackedByteArray:
-				var img_normal = Marshalls.base64_to_raw(sprite.normal)
-				nimg.load_png_from_buffer(img_normal)
+				img_normal = Marshalls.base64_to_raw(sprite.normal)
 			else:
-				nimg.load_png_from_buffer(sprite.normal)
-			nimg.fix_alpha_edges()
-			var nimg_tex = ImageTexture.new()
-			nimg_tex.set_image(nimg)
-			img_can.normal_texture = nimg_tex
-	sprite_obj.get_node("%Sprite2D").texture = img_can
+				img_normal = sprite.normal
+			sprite_obj.texture_buffer_normal = img_normal;	
+			
+	sprite_obj.reloadTexture()
 
 func load_apng(sprite_obj, sprite):
-	var img = AImgIOAPNGImporter.load_from_buffer(sprite.img)
-	var tex = img[1] as Array[AImgIOFrame]
-	sprite_obj.frames = tex
-	
-	for n in sprite_obj.frames:
-		n.content.fix_alpha_edges()
-	
-	var cframe: AImgIOFrame = sprite_obj.frames[0]
-	
-	var text = ImageTexture.create_from_image(cframe.content)
-	var img_can = CanvasTexture.new()
-	img_can.diffuse_texture = text
+	sprite_obj.texture_buffer = sprite.img
 	if sprite.normal:
-		var norm = AImgIOAPNGImporter.load_from_buffer(sprite.normal)
-		var texn = norm[1] as Array[AImgIOFrame]
-		sprite_obj.frames2 = texn
-		for n in sprite_obj.frames2:
-			n.content.fix_alpha_edges()
-		
-		var cframe2: AImgIOFrame = sprite_obj.frames2[0]
-		var text2 = ImageTexture.create_from_image(cframe2.content)
-		img_can.normal_texture = text2
-	sprite_obj.texture = img_can
-	sprite_obj.is_apng = true
-	sprite_obj.get_node("%Sprite2D").texture = img_can
+		sprite_obj.texture_buffer_normal = sprite.normal
+	sprite_obj.relaodApngTexture()
+	
 
 func load_pngplus_file(path):
 	Themes.theme_settings.path = path
@@ -299,13 +266,8 @@ func load_pngplus_file(path):
 	for i in load_dict:
 		var sprite_obj = preload("res://Misc/SpriteObject/sprite_object.tscn").instantiate()
 		var img_data = Marshalls.base64_to_raw(load_dict[i]["imageData"])
-		var img = Image.new()
-		img.load_png_from_buffer(img_data)
-		var img_tex = ImageTexture.new()
-		img_tex.set_image(img)
-		var img_can = CanvasTexture.new()
-		img_can.diffuse_texture = img_tex
-		sprite_obj.get_node("%Sprite2D").texture = img_can
+		sprite_obj.texture_buffer = img_data
+		sprite_obj.reloadTexture()
 		
 	#	'''
 	
@@ -315,15 +277,17 @@ func load_pngplus_file(path):
 		sprite_obj.sprite_name = "Sprite " + str(i)
 		
 		sprite_obj.dictmain.xFrq = load_dict[i]["xFrq"]
-		sprite_obj.dictmain.xAmp = load_dict[i]["xAmp"]
+		sprite_obj.dictmain.xAmp = float(load_dict[i]["xAmp"])
 		sprite_obj.dictmain.yFrq = load_dict[i]["yFrq"]
-		sprite_obj.dictmain.yAmp = load_dict[i]["yAmp"]
+		sprite_obj.dictmain.yAmp = float(load_dict[i]["yAmp"])
 		sprite_obj.dictmain.dragSpeed = load_dict[i]["drag"]
 		sprite_obj.dictmain.rdragStr = load_dict[i]["rotDrag"]
 		sprite_obj.dictmain.stretchAmount = load_dict[i]["stretchAmount"]
 		sprite_obj.dictmain.ignore_bounce = load_dict[i]["ignoreBounce"]
 		sprite_obj.dictmain.hframes = load_dict[i]["frames"]
 		sprite_obj.dictmain.animation_speed = load_dict[i]["animSpeed"]
+		if (sprite_obj.dictmain.hframes > 1):
+			sprite_obj.dictmain.trimTransparentPixels = false
 		
 		if load_dict[i]["clipped"]:
 			sprite_obj.dictmain.clip = 2

@@ -74,6 +74,7 @@ func enable():
 		%RemoveAssetButton.disabled = false
 		%ShouldDisappearCheck.disabled = false
 		%DontHideOnToggleCheck.disabled = false
+		%TrimTransparencyCheck.disabled = false
 
 		%IsAssetButton.text = "Null"
 		
@@ -113,6 +114,7 @@ func set_data():
 	%IsAssetButton.action = str(Global.held_sprite.sprite_id)
 	%IsAssetCheck.button_pressed = Global.held_sprite.is_asset
 	%DontHideOnToggleCheck.button_pressed = Global.held_sprite.show_only
+	%TrimTransparencyCheck.button_pressed = Global.held_sprite.dictmain.trimTransparentPixels
 	%ShouldDisList.clear()
 	for i in Global.held_sprite.saved_keys:
 		%ShouldDisList.add_item(i)
@@ -295,6 +297,20 @@ func _on_clip_children_toggled(toggled_on: bool) -> void:
 		Global.held_sprite.get_node("%Sprite2D").set_clip_children_mode(0)
 		Global.held_sprite.dictmain.clip = 0
 	Global.held_sprite.save_state(Global.current_state)
+	
+	
+func on_trim_transparent_pixels_toggled(toggled_on: bool) -> void:
+	var existing = Global.held_sprite.dictmain.trimTransparentPixels
+	if toggled_on:
+		Global.held_sprite.dictmain.trimTransparentPixels = true
+	else:
+		Global.held_sprite.dictmain.trimTransparentPixels = false
+	Global.held_sprite.save_state(Global.current_state)
+	if existing != Global.held_sprite.dictmain.trimTransparentPixels:
+		if Global.held_sprite.is_apng:
+			Global.held_sprite.reloadApngTexture()
+		else:
+			Global.held_sprite.reloadTexture()
 
 func _on_eye_option_item_selected(index: int) -> void:
 	match index:

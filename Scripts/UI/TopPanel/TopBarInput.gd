@@ -274,18 +274,18 @@ func export_images(images = get_tree().get_nodes_in_group("Sprites")):
 		
 	for sprite in images:
 		if !sprite.dictmain.folder:
-			if sprite.img_animated:
+			if !sprite.is_apng:
 				var file = FileAccess.open(dire +"/" + sprite.sprite_name + str(randi()) + ".gif", FileAccess.WRITE)
-				file.store_buffer(sprite.anim_texture)
+				file.store_buffer(sprite.texture_buffer)
 				file.close()
 				file = null
-				if sprite.anim_texture_normal != null:
+				if sprite.texture_buffer_normal != null:
 					var filenormal = FileAccess.open(dire +"/" + sprite.sprite_name + str(randi()) + "Normal" + ".gif", FileAccess.WRITE)
-					filenormal.store_buffer(sprite.anim_texture_normal)
+					filenormal.store_buffer(sprite.texture_buffer_normal)
 					filenormal.close()
 					filenormal = null
 					
-			elif sprite.is_apng:
+			else:
 				var file = FileAccess.open(dire +"/" + sprite.sprite_name + str(randi()) + ".apng", FileAccess.WRITE)
 				var exp_image = AImgIOAPNGExporter.new().export_animation(sprite.frames, 10, self, "_progress_report", [])
 				file.store_buffer(exp_image)
@@ -296,19 +296,8 @@ func export_images(images = get_tree().get_nodes_in_group("Sprites")):
 					var exp2 = AImgIOAPNGExporter.new().export_animation(sprite.frames2, 10, self, "_progress_report", [])
 					filenormal.store_buffer(exp2)
 					filenormal.close()
-					filenormal = null
-				
-			elif !sprite.img_animated && !sprite.is_apng:
-				var img = Image.new()
-				img = sprite.get_node("%Sprite2D").texture.diffuse_texture.get_image()
-				img.save_png(dire +"/" + sprite.sprite_name + str(randi()) + ".png")
-				img = null
-				
-				if sprite.get_node("%Sprite2D").texture.normal_texture != null:
-					var normimg = Image.new()
-					normimg = sprite.get_node("%Sprite2D").texture.normal_texture.get_image()
-					normimg.save_png(dire +"/" + sprite.sprite_name + "Normal" + str(randi()) + ".png")
-					normimg = null
+					filenormal = null		
+		
 
 func _on_background_focus_entered() -> void:
 	Global.spinbox_held = true
